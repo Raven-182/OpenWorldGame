@@ -30,7 +30,10 @@ public class LadingManager : MonoBehaviour
     public void loadSettingsScene(){
         StartCoroutine(SceneAsyncLoad("SettingsScene"));
     }
-      public void loadGameScene(){
+    public void loadGameScene(){
         StartCoroutine(SceneAsyncLoad("GameScene"));
+    }
+    public void loadMainScene(){
+        StartCoroutine(SceneAsyncLoad("MainScene"));
     }
 }

@@ -8,8 +8,7 @@ public class MinimapController : MonoBehaviour
     public float height = 25f;  
 
     void Update()
-    {
-        
+    {  
         Vector3 newPosition = player.position;
         newPosition.y += height;  
         transform.position = newPosition;
