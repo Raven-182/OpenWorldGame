@@ -5,38 +5,83 @@ using UnityEngine;
 
 public class CameraMachineController : MonoBehaviour
 {
+    [SerializeField] List<CinemachineVirtualCameraBase> cameras;
+    [SerializeField] Transform worldCenter; // Center point for panning
+    [SerializeField] Transform character; // Character for zooming in
+    [SerializeField] Transform finalTarget; // Target for zooming to
+    [SerializeField] float panSpeed = 20f; // Speed of panning
+    [SerializeField] float panDuration = 10f; // Duration for panning
+    [SerializeField] float zoomDuration = 4f;
+    [SerializeField] int defaultCameraIndex = 0; // Index for the default camera
+     public bool cutsceneOver = false;
 
-    [SerializeField] List <CinemachineVirtualCameraBase> cameras;
-    [SerializeField] int cameraIndex = 0;
-    // Start is called before the first frame update
     void Start()
     {
-        foreach( var camera in cameras)
-        {
-            camera.gameObject.SetActive(false);
-        }
-        cameras[cameraIndex].gameObject.SetActive(true);
-        
+        // Start the cutscene sequence
+        StartCoroutine(PlayCutscenes());
     }
 
-    // Update is called once per frame
-    void Update()
+    IEnumerator PlayCutscenes()
     {
-        if (Input.GetKeyDown(KeyCode.C))
-        {
-            SwitchCamera();
-        }
-    }
-
-    void SwitchCamera(){
-        cameraIndex++;
-        if(cameraIndex >= cameras.Count){
-            cameraIndex = 0;
-        }
-        foreach( var camera in cameras)
+        foreach (var camera in cameras)
         {
             camera.gameObject.SetActive(false);
         }
-        cameras[cameraIndex].gameObject.SetActive(true);
+
+        cameras[1].gameObject.SetActive(true);
+        yield return StartCoroutine(PanAroundWorld());
+        cameras[1].gameObject.SetActive(false);
+
+        cameras[0].gameObject.SetActive(true); 
+        yield return new WaitForSeconds(zoomDuration);
+        cameras[0].gameObject.SetActive(false);
+
+
+        cameras[3].gameObject.SetActive(true); 
+        yield return new WaitForSeconds(zoomDuration);
+        cameras[3].gameObject.SetActive(false);
+
+
+        cameras[4].gameObject.SetActive(true); 
+        yield return StartCoroutine(ZoomToFinalTarget());
+        cameras[4].gameObject.SetActive(false);
+
+        ActivateDefaultCamera();
+    }
+
+
+    IEnumerator PanAroundWorld()
+    {
+        float elapsedTime = 0f;
+
+        while (elapsedTime < panDuration)
+        {
+            cameras[1].transform.RotateAround(worldCenter.position, Vector3.up, panSpeed * Time.deltaTime);
+            elapsedTime += Time.deltaTime;
+            yield return null;
+        }
+    }
+    IEnumerator ZoomToFinalTarget()
+    {
+        float elapsedTime = 0f;
+        Vector3 initialPosition = cameras[1].transform.position;
+        Vector3 targetPosition = finalTarget.position;
+
+        while (elapsedTime < zoomDuration)
+        {
+            cameras[1].transform.position = Vector3.Lerp(initialPosition, targetPosition, elapsedTime / zoomDuration);
+            elapsedTime += Time.deltaTime;
+            yield return null;
+        }
+    }
+
+    void ActivateDefaultCamera()
+    {
+        foreach (var camera in cameras)
+        {
+            camera.gameObject.SetActive(false);
+        }
+        cameras[defaultCameraIndex].gameObject.SetActive(true);
+        cutsceneOver = true;
     }
 }

@@ -47,72 +47,116 @@ public class CharacterMovement : MonoBehaviour
         Vector3 direction = (horizontal * transform.right) + (vertical * transform.forward);
         direction.y = 0; 
 
-        
-        if (horizontal != 0 || vertical != 0)
-        {
-            TriggerRunAnimation();
-        }
+        TriggerRunAnimation(horizontal, vertical);
 
         charControl.Move(direction * speed * Time.deltaTime);
     }   
 
-    private void HandleMobileControls()
+    // private void HandleMobileControls()
+    // {
+    //     if (Input.touchCount > 0)
+    //     {
+    //         theTouch = Input.GetTouch(0);
+
+    //         if (theTouch.phase == TouchPhase.Began)
+    //         {
+    //             touchStart = theTouch.position;  // Record touch start position
+    //         }
+    //         else if (theTouch.phase == TouchPhase.Moved || theTouch.phase == TouchPhase.Ended)
+    //         {
+    //             touchEnd = theTouch.position;   // Record touch end position
+    //             float x = touchEnd.x - touchStart.x;
+    //             float y = touchEnd.y - touchStart.y;
+
+    //             if (Mathf.Abs(x) == 0 && Mathf.Abs(y) == 0)
+    //             {
+    //                 touchDirection = "tapped";   
+    //                 MoveForward();               
+    //             }
+    //             else if (Mathf.Abs(x) > Mathf.Abs(y))
+    //             {
+    //                 touchDirection = x > 0 ? "right" : "left";  
+    //                 if (touchDirection == "right")
+    //                 {
+    //                     MoveRight();    
+    //                 }
+    //                 else 
+    //                 {
+    //                     MoveLeft();   
+    //                 }
+    //             }
+
+    //             Debug.Log("Mobile Input: " + touchDirection);   // Debug touch direction
+    //         }
+    //     }
+    // }
+
+
+private void HandleMobileControls()
+{
+    if (Input.touchCount > 0)
     {
-        if (Input.touchCount > 0)
+        theTouch = Input.GetTouch(0);
+
+        if (theTouch.phase == TouchPhase.Began)
         {
-            theTouch = Input.GetTouch(0);
+            touchStart = theTouch.position;  // Record touch start position
+        }
+        else if (theTouch.phase == TouchPhase.Moved || theTouch.phase == TouchPhase.Ended)
+        {
+            touchEnd = theTouch.position;  // Record touch end position
+            float x = touchEnd.x - touchStart.x;
+            float y = touchEnd.y - touchStart.y;
 
-            if (theTouch.phase == TouchPhase.Began)
+            if (Mathf.Abs(x) == 0 && Mathf.Abs(y) == 0)  // Tap detected
             {
-                touchStart = theTouch.position;  // Record touch start position
+                touchDirection = "tapped";
+                MoveForward();
+                TriggerRunAnimation(1f, 0f);  // Trigger "StartRun" animation (treat as forward movement)
             }
-            else if (theTouch.phase == TouchPhase.Moved || theTouch.phase == TouchPhase.Ended)
+            else if (Mathf.Abs(x) > Mathf.Abs(y))  // Swipe horizontally
             {
-                touchEnd = theTouch.position;   // Record touch end position
-                float x = touchEnd.x - touchStart.x;
-                float y = touchEnd.y - touchStart.y;
-
-                if (Mathf.Abs(x) == 0 && Mathf.Abs(y) == 0)
+                touchDirection = x > 0 ? "right" : "left";
+                if (touchDirection == "right")
                 {
-                    touchDirection = "tapped";   
-                    MoveForward();               
+                    MoveRight();
                 }
-                else if (Mathf.Abs(x) > Mathf.Abs(y))
+                else 
                 {
-                    touchDirection = x > 0 ? "right" : "left";  
-                    if (touchDirection == "right")
-                    {
-                        MoveRight();    
-                    }
-                    else 
-                    {
-                        MoveLeft();   
-                    }
+                    MoveLeft();
                 }
-
-                Debug.Log("Mobile Input: " + touchDirection);   // Debug touch direction
+                TriggerRunAnimation(1f, 0f);  // Treat any swipe as movement
             }
+            else
+            {
+                TriggerRunAnimation(0f, 0f);  // Trigger "Idle" animation if no movement
+            }
+
+            Debug.Log("Mobile Input: " + touchDirection);  // Debug touch direction
         }
     }
+}
+
       private void MoveForward()
     {
-        Vector3 forwardDirection = transform.forward * speed * Time.deltaTime;
+        Vector3 forwardDirection = transform.forward;
+        forwardDirection.y = 0;
         charControl.Move(forwardDirection);  
-        TriggerRunAnimation();               
+        // TriggerRunAnimation();               
     }
 
        private void MoveRight()
     {
         Vector3 rightDirection = transform.right * swipeSpeed * Time.deltaTime;
         charControl.Move(rightDirection);    
-        TriggerRunAnimation();               
+        //TriggerRunAnimation();               
     }
 
     private void MoveLeft()
     {
         Vector3 leftDirection = -transform.right * swipeSpeed * Time.deltaTime;
         charControl.Move(leftDirection);     
-        TriggerRunAnimation();               
+        //TriggerRunAnimation();               
     }
 
     private void HandleMovement()
@@ -131,12 +175,19 @@ public class CharacterMovement : MonoBehaviour
         charControl.Move(velocity * Time.deltaTime); 
     }
 
-    private void TriggerRunAnimation()
+    private void TriggerRunAnimation(float horizontal, float vertical)
+    
     {
-        if (!animator.GetCurrentAnimatorStateInfo(0).IsName("StartRun"))
+        if (horizontal != 0 || vertical != 0)
         {
+    
             animator.SetTrigger("StartRun");
         }
+        else
+        {
+            animator.SetTrigger("Idle");
+        }
+    
     }
 
 }

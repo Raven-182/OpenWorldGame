@@ -16,6 +16,7 @@ public class GamePlayController : MonoBehaviour
     public GameObject levelCompletedPanel;      
     public Canvas minimapCanvas;
     private float totalTimePlayed = 0f;    
+    public CameraMachineController cameraMachineController;
     void Start()
     {
         currentTime = startTime;
@@ -25,6 +26,7 @@ public class GamePlayController : MonoBehaviour
     void Update()
     {
         if (playerReachedGoal) return;
+        if (!cameraMachineController.cutsceneOver) return; // waiting to let the cutscene end
 
         currentTime -= Time.deltaTime;
         totalTimePlayed += Time.deltaTime;
