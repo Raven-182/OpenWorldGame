@@ -10,7 +10,6 @@ public class CharacterMovement : MonoBehaviour
     private CharacterController charControl;
 
     public float speed = 5f;
-    public float swipeSpeed = 3f; 
     public float gravity = -9.81f; 
     public float groundDistance = 0.4f; 
     public LayerMask groundMask; 
@@ -22,6 +21,7 @@ public class CharacterMovement : MonoBehaviour
     private Touch theTouch;
     private Vector2 touchStart, touchEnd;
     private string touchDirection;
+    private bool isTouching = false;
     
 
     void Start()
@@ -32,12 +32,15 @@ public class CharacterMovement : MonoBehaviour
 
     void Update(){
         #if UNITY_ANDROID || UNITY_IOS
-            HandleMobileControls();  
+            HandleMobileControls(); 
+        if (isTouching){
+            MoveForward();
+        }
         #else
             HandleDesktopControls();  
         #endif
         //ensure gravity applies
-        HandleMovement(); 
+        HandleVerticalMovement(); 
     }
     private void HandleDesktopControls()
     {
@@ -52,114 +55,79 @@ public class CharacterMovement : MonoBehaviour
         charControl.Move(direction * speed * Time.deltaTime);
     }   
 
-    // private void HandleMobileControls()
-    // {
-    //     if (Input.touchCount > 0)
-    //     {
-    //         theTouch = Input.GetTouch(0);
-
-    //         if (theTouch.phase == TouchPhase.Began)
-    //         {
-    //             touchStart = theTouch.position;  // Record touch start position
-    //         }
-    //         else if (theTouch.phase == TouchPhase.Moved || theTouch.phase == TouchPhase.Ended)
-    //         {
-    //             touchEnd = theTouch.position;   // Record touch end position
-    //             float x = touchEnd.x - touchStart.x;
-    //             float y = touchEnd.y - touchStart.y;
-
-    //             if (Mathf.Abs(x) == 0 && Mathf.Abs(y) == 0)
-    //             {
-    //                 touchDirection = "tapped";   
-    //                 MoveForward();               
-    //             }
-    //             else if (Mathf.Abs(x) > Mathf.Abs(y))
-    //             {
-    //                 touchDirection = x > 0 ? "right" : "left";  
-    //                 if (touchDirection == "right")
-    //                 {
-    //                     MoveRight();    
-    //                 }
-    //                 else 
-    //                 {
-    //                     MoveLeft();   
-    //                 }
-    //             }
-
-    //             Debug.Log("Mobile Input: " + touchDirection);   // Debug touch direction
-    //         }
-    //     }
-    // }
-
-
-private void HandleMobileControls()
-{
-    if (Input.touchCount > 0)
+    private void HandleMobileControls()
     {
-        theTouch = Input.GetTouch(0);
-
-        if (theTouch.phase == TouchPhase.Began)
+        if (Input.touchCount > 0)
         {
-            touchStart = theTouch.position;  // Record touch start position
-        }
-        else if (theTouch.phase == TouchPhase.Moved || theTouch.phase == TouchPhase.Ended)
-        {
-            touchEnd = theTouch.position;  // Record touch end position
-            float x = touchEnd.x - touchStart.x;
-            float y = touchEnd.y - touchStart.y;
+            theTouch = Input.GetTouch(0);
 
-            if (Mathf.Abs(x) == 0 && Mathf.Abs(y) == 0)  // Tap detected
+            if (theTouch.phase == TouchPhase.Began)
             {
-                touchDirection = "tapped";
-                MoveForward();
-                TriggerRunAnimation(1f, 0f);  // Trigger "StartRun" animation (treat as forward movement)
+                isTouching = true; 
+                touchStart = theTouch.position;  
             }
-            else if (Mathf.Abs(x) > Mathf.Abs(y))  // Swipe horizontally
+            else if (theTouch.phase == TouchPhase.Moved || theTouch.phase == TouchPhase.Stationary)
             {
-                touchDirection = x > 0 ? "right" : "left";
-                if (touchDirection == "right")
+                
+                touchEnd = theTouch.position;  
+
+                float x = touchEnd.x - touchStart.x;
+                float y = touchEnd.y - touchStart.y;
+
+         
+                if (Mathf.Abs(x) > Mathf.Abs(y))  // Horizontal swipe
                 {
-                    MoveRight();
+                    touchDirection = x > 0 ? "right" : "left";
+                    if (touchDirection == "right")
+                    {
+                        MoveRight();
+                    }
+                    else
+                    {
+                        MoveLeft();
+                    }
+                    TriggerRunAnimation(1f, 0f);  
                 }
-                else 
+                else  
                 {
-                    MoveLeft();
+                    touchDirection = "tapped"; //move it forward when tapped 
+                    MoveForward();
+                    TriggerRunAnimation(1f, 0f);  
                 }
-                TriggerRunAnimation(1f, 0f);  // Treat any swipe as movement
             }
-            else
+            else if (theTouch.phase == TouchPhase.Ended || theTouch.phase == TouchPhase.Canceled)
             {
-                TriggerRunAnimation(0f, 0f);  // Trigger "Idle" animation if no movement
+        
+                isTouching = false;
+                TriggerRunAnimation(0f, 0f);  
             }
 
             Debug.Log("Mobile Input: " + touchDirection);  // Debug touch direction
         }
     }
-}
 
-      private void MoveForward()
+
+    private void MoveForward()
     {
-        Vector3 forwardDirection = transform.forward;
+        Vector3 forwardDirection = transform.forward ;
         forwardDirection.y = 0;
-        charControl.Move(forwardDirection);  
-        // TriggerRunAnimation();               
+        charControl.Move(forwardDirection * speed * Time.deltaTime);  
+                 
     }
 
        private void MoveRight()
     {
-        Vector3 rightDirection = transform.right * swipeSpeed * Time.deltaTime;
-        charControl.Move(rightDirection);    
-        //TriggerRunAnimation();               
+        Vector3 rightDirection = transform.right * speed * Time.deltaTime;
+        charControl.Move(rightDirection);                   
     }
 
     private void MoveLeft()
     {
-        Vector3 leftDirection = -transform.right * swipeSpeed * Time.deltaTime;
-        charControl.Move(leftDirection);     
-        //TriggerRunAnimation();               
+        Vector3 leftDirection = -transform.right * speed * Time.deltaTime;
+        charControl.Move(leftDirection);                   
     }
 
-    private void HandleMovement()
+    private void HandleVerticalMovement()
     {
         isGrounded = Physics.CheckSphere(groundCheck.position, groundDistance, groundMask);
 
@@ -180,7 +148,6 @@ private void HandleMobileControls()
     {
         if (horizontal != 0 || vertical != 0)
         {
-    
             animator.SetTrigger("StartRun");
         }
         else
